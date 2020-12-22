@@ -20,40 +20,54 @@ HunterGate(
   SHA1 "35fa55bc1dfcf9f4d7264f8bb26cd1759ce1ae07"
 )
 
-# TODO: rename project and delete this comment
-project(template VERSION 0.1.0)
+project(lab-06-multithreads VERSION 0.1.0)
 string(APPEND CMAKE_CXX_FLAGS " -pedantic -Werror -Wall -Wextra")
 string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-command-line-argument")
 string(APPEND CMAKE_CXX_FLAGS " -Wshadow -Wnon-virtual-dtor")
 
+hunter_add_package(nlohmann_json)
+find_package(nlohmann_json CONFIG REQUIRED)
+hunter_add_package(Boost COMPONENTS log filesystem thread)
+find_package(Boost CONFIG REQUIRED log filesystem thread)
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third-party/PicoSHA2/)
 
 add_library(${PROJECT_NAME} STATIC
-  # enum your files and delete this comment
+
   ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
 )
+
+add_executable(tests
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp
+        )
+
+add_executable(lab
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
+        )
 
 add_executable(demo
   ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include>"
-)
+target_include_directories(lab-06-multithreads
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+        )
+target_include_directories(lab
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+        )
+target_include_directories(tests
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+        )
 
 target_link_libraries(demo ${PROJECT_NAME})
+target_link_libraries(tests GTest::gtest_main lab-06-multithreads nlohmann_json::nlohmann_json)
+target_link_libraries(lab-06-multithreads Boost::log Boost::filesystem Boost::thread)
+target_link_libraries(lab lab-06-multithreads Boost::log Boost::filesystem Boost::thread nlohmann_json::nlohmann_json)
 
-if(BUILD_TESTS)
-  add_executable(tests
-    # TODO: enum your files and delete this comment
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp
-  )
-  target_link_libraries(tests ${PROJECT_NAME} GTest::gtest_main)
-  enable_testing()
-  add_test(NAME unit_tests COMMAND tests)
-endif()
+
+enable_testing()
+add_test(NAME unit_tests COMMAND tests)
 
 if(BUILD_COVERAGE)
   set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
