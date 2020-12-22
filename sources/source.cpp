@@ -39,6 +39,6 @@ int main(int const arguments_count,
          i < the_number_of_threads; ++i) {
         the_threads_vector[i].join();
     }
-
+    
     return 0;
 }

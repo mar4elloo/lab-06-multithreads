@@ -4,7 +4,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_TESTS "Build tests" ON)
-option(BUILD_DOCS "Build documentation" OFF)
 option(BUILD_COVERAGE "Build code coverage" OFF)
 
 set(
@@ -33,7 +32,7 @@ hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third-party/PicoSHA2/)
 
-add_library(${PROJECT_NAME} STATIC
+add_library(lab-06-multithreads STATIC
 
   ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
 )
@@ -69,39 +68,18 @@ target_link_libraries(lab lab-06-multithreads Boost::log Boost::filesystem Boost
 enable_testing()
 add_test(NAME unit_tests COMMAND tests)
 
-if(BUILD_COVERAGE)
+if (BUILD_COVERAGE)
+  function(ENABLE_PROJECT_COVERAGE PROJECT)
+    target_compile_options(${PROJECT} PRIVATE --coverage)
+    target_link_libraries(${PROJECT} --coverage)
+    add_coverage(${PROJECT})
+  endfunction()
+
   set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/coverage/cmake")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
   find_package(codecov)
-  add_coverage(${PROJECT_NAME})
-  add_coverage(tests)
+  enable_project_coverage(hash_lib)
+  enable_project_coverage(tests)
+  list(APPEND LCOV_REMOVE_PATTERNS "'${PROJECT_SOURCE_DIR}/tests/*'")
   coverage_evaluate()
-endif()
-
-if(BUILD_DOCS)
-  set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/_docs)
-  set(DOXYGEN_EXAMPLE_PATH examples)
-  set(DOXYGEN_GENERATE_HTML NO)
-  set(DOXYGEN_GENERATE_MAN YES)
-  find_package(Doxygen)
-  doxygen_add_docs(docs include)
-  install(DIRECTORY ${DOXYGEN_OUTPUT_DIRECTORY}/man DESTINATION share)
-  # add_dependencies(install docs) need to call target docs before install or package
-endif()
-
-include(CPackConfig.cmake)
-
-install(TARGETS ${PROJECT_NAME} demo
-  EXPORT "${PROJECT_NAME}-targets"
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  INCLUDES DESTINATION include
-)
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include)
-
-install(EXPORT "${PROJECT_NAME}-targets"
-  NAMESPACE "${PROJECT_NAME}::"
-  DESTINATION "lib/cmake"
-)
+endif ()
